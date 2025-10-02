@@ -1,0 +1,57 @@
+@page "/register"
+@inject AppDbContext Db
+@inject NavigationManager Nav
+@using BlazorLogin.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Cryptography
+@using System.Text
+
+<h3>Register</h3>
+
+<input @bind="Username" placeholder="Username" />
+<input @bind="Password" placeholder="Password" type="password" />
+<button @onclick="RegisterUser">Register</button>
+
+<p>@Message</p>
+
+@code {
+    private string Username = "";
+    private string Password = "";
+    private string Message = "";
+
+    private async Task RegisterUser()
+    {
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        {
+            Message = "Username and password are required.";
+            return;
+        }
+
+        var existingUser = await Db.Users.FirstOrDefaultAsync(u => u.Username == Username);
+        if (existingUser != null)
+        {
+            Message = "Username already exists.";
+            return;
+        }
+
+        var user = new User
+        {
+            Username = Username,
+            PasswordHash = HashPassword(Password)
+        };
+
+        Db.Users.Add(user);
+        await Db.SaveChangesAsync();
+
+        Message = "Registration successful!";
+        Nav.NavigateTo("/");
+    }
+
+    private string HashPassword(string password)
+    {
+        using var sha = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(password);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
+}

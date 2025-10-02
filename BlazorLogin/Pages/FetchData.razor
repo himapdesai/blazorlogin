@@ -1,0 +1,80 @@
+﻿@page "/fetchdata"
+@using BlazorLogin.Data
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AppDbContext DbContext
+
+@attribute [Authorize]
+
+<PageTitle>My Weather from app.db using EF</PageTitle>
+
+<h1>My Weather from app.db using EF</h1>
+
+<p>This component demonstrates showing data from the database.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!forecasts.Any())
+{
+    <p><em>No weather data available.</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th aria-label="Temperature in Celsius">Temp. (C)</th>
+                <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+	private List<WeatherForecast>? forecasts;
+	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+	private IEnumerable<string> userClaimRoles = Enumerable.Empty<string>();
+
+	private async Task GetClaimsPrincipalData()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+		if (user.Identity is not null && user.Identity.IsAuthenticated)
+		{
+			claims = user.Claims;
+			userClaimRoles = user.Claims.Select(a => a.Value).ToList();
+		}
+
+		if (userClaimRoles.Contains("Admin"))
+		{
+			Console.WriteLine("User is in Admin role");
+		}
+	}
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		GetClaimsPrincipalData();
+
+        forecasts = await DbContext.WeatherForecasts
+            .OrderBy(w => w.Date)
+            .ToListAsync();
+	}
+
+}
