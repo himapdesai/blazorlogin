@@ -17,7 +17,7 @@ Hello! This is my first Blazor app. I am new developer and I am learning C# and 
     dotnet ef migrations add Init
     ```
     ```
-    dotnet ef update database  
+    dotnet ef  database update  
     ```
 4. Run this command:
    ```

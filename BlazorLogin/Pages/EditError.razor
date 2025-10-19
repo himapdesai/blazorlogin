@@ -1,0 +1,41 @@
+@page "/edit/{Id:int}"
+@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@using ErrorBlazorLoginApp.Models
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Error? errorModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        errorModel = await ErrorService.GetErrorById(Id);
+    }
+
+    private async Task SaveChanges()
+    {
+        if (errorModel != null)
+        {
+            await ErrorService.UpdateError(errorModel);
+            NavigationManager.NavigateTo("/errors");
+        }
+    }
+}
+@if (errorModel == null)
+{
+    <p> Error not found!</p>
+}
+else
+{
+
+    <h3>Edit Error</h3>
+    <EditForm Model="errorModel" OnValidSubmit="SaveChanges">
+        <InputText @bind-Value="errorModel.Title" class="form-control" />
+        <InputText @bind-Value="errorModel.Date" class="form-control" />
+        <InputText @bind-Value="errorModel.Description" class="form-control" />
+        <button type="submit"> Save </button>
+    </EditForm>
+}

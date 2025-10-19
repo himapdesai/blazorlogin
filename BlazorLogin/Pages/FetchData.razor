@@ -47,34 +47,34 @@ else
 }
 
 @code {
-	private List<WeatherForecast>? forecasts;
-	private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
-	private IEnumerable<string> userClaimRoles = Enumerable.Empty<string>();
+    private List<WeatherForecast>? forecasts;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
+    private IEnumerable<string> userClaimRoles = Enumerable.Empty<string>();
 
-	private async Task GetClaimsPrincipalData()
-	{
-		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-		var user = authState.User;
-		if (user.Identity is not null && user.Identity.IsAuthenticated)
-		{
-			claims = user.Claims;
-			userClaimRoles = user.Claims.Select(a => a.Value).ToList();
-		}
+    private async Task GetClaimsPrincipalData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            claims = user.Claims;
+            userClaimRoles = user.Claims.Select(a => a.Value).ToList();
+        }
 
-		if (userClaimRoles.Contains("Admin"))
-		{
-			Console.WriteLine("User is in Admin role");
-		}
-	}
+        if (userClaimRoles.Contains("Admin"))
+        {
+            Console.WriteLine("User is in Admin role");
+        }
+    }
 
 
-	protected override async Task OnInitializedAsync()
-	{
-		GetClaimsPrincipalData();
+    protected override async Task OnInitializedAsync()
+    {
+        GetClaimsPrincipalData();
 
         forecasts = await DbContext.WeatherForecasts
-            .OrderBy(w => w.Date)
-            .ToListAsync();
-	}
+        .OrderBy(w => w.Date)
+        .ToListAsync();
+    }
 
 }

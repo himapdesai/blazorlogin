@@ -3,6 +3,8 @@ using BlazorLogin.Data;
 using BlazorLogin.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using ErrorBlazorLoginApp.Services;
+using ErrorBlazorLoginApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ErrorService>();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
@@ -24,7 +27,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
     });
 
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
 
@@ -42,11 +46,28 @@ using (var serviceScope = app.Services.CreateScope())
         db.SaveChanges();
     }
 }
-
-var cookiePolicyOptions = new CookiePolicyOptions
+using (var serviceScope = app.Services.CreateScope())
 {
-    MinimumSameSitePolicy = SameSiteMode.Strict,
-};
+    var db = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (!db.Errors.Any())
+    {
+        db.Errors.AddRange(
+            new Error { Title = "STCON", Date = "2025/10/06", Description = "Retry error with Id XXX" },
+            new Error { Title = "DC", Date = "2025/10/09", Description = "DC: 5426216.2 weight do not match" },
+            new Error { Title = "OVDC", Date = "2025/10/10", Description = "OVDC error for Kem" }
+        );
+        db.SaveChanges();
+    }
+}
+    var cookiePolicyOptions = new CookiePolicyOptions
+    {
+        MinimumSameSitePolicy = SameSiteMode.Strict,
+    };
+
+//var builder1 = WebApplication.CreateBuilder(args);
+
+//var app1 = builder.Build();
+
 app.UseCookiePolicy(cookiePolicyOptions);
 
 app.UseStaticFiles();
@@ -61,3 +82,7 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+internal class BlazorLoginAppErrorContext
+{
+}

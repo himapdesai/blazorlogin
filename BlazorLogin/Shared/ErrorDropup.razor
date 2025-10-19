@@ -1,0 +1,43 @@
+@page "/ErrorDroup"
+@using BlazorLogin.Shared
+
+<link href="=" css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+
+<h3>Error Drop-up</h3>
+<div class-"dropup position-fixed bottom-0 end-0 m-3">
+    <button class="btn btn-danger fropdown-toggle" type="button" @onclick="ToggleErrors">
+        Show Errors
+    </button>
+
+    @if (showErrors)
+    {
+        <ul class="dropdown-menu  show">
+            @foreach (var error in errorMessages)
+            {
+                <li><a class="dropdown-item  text-danger">Error 1: Invalid input</a></li>
+                <li><a class="dropdown-item  text-danger">Error 2: Missing field</a></li>
+
+            }
+
+        </ul>
+    }
+</div>
+
+@code {
+
+    private bool showErrors = false;
+
+    private List<string> errorMessages { get; set; } = new()
+{
+"Error 1: Invalid input",
+"Error 2: Newtwork timeout",
+"Error 3: Missing required filed"
+
+};
+    private void ToggleErrors()
+    {
+        showErrors = !showErrors;
+    }
+
+
+}

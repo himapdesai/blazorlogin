@@ -1,0 +1,46 @@
+@page "/errors"
+@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@using ErrorBlazorLoginApp.Models
+@using System.Threading.Tasks
+
+@attribute [Authorize]
+
+<h3>Error List</h3>
+
+<table class="tanle">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Error in Errors)
+        {
+            <tr>
+                <td>@Error.Title</td>
+                <td>@Error.Date </td>
+                <td>@Error.Description</td>
+            </tr>
+            <tr>
+                <th>
+                    <a href="/edit/@Error.ID" class="btn btn-primary btn-sm">Update</a>
+                    <a href="/delete/@Error.ID" class="btn  btn-danger  btn-sm">Delete</a>
+                </th>
+            </tr>  
+        }
+        <a href="/add" class="btn btn-primary btn-sm">Add</a> 
+    </tbody>
+</table>
+
+@code {
+
+    [Parameter] public List<Error> Errors { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.Errors = await ErrorService.GetErrors();
+        await base.OnInitializedAsync();
+    }
+}

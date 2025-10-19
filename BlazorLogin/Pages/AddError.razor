@@ -1,0 +1,30 @@
+@page "/add"
+@using ErrorBlazorLoginApp.Models
+@using ErrorBlazorLoginApp.Services
+@using System.ComponentModel.DataAnnotations
+@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+<input type="text" class="form-control" placeholder="Enter title" @bind="Title" />
+<input type="text" class="form-control" placeholder="Enter description" @bind="Description" />
+<br />
+<button class="btn  btn-danger mt-2" @onclick="AddErrorCallback">Add</button>
+
+@code
+{
+    [Parameter] public int Id { get; set; }
+    [Parameter, Required] public string Title { get; set; }
+    [Parameter] public string Description { get; set; }
+    private async Task AddErrorCallback()
+    {
+        Error error = new Error();
+        error.Title = this.Title;
+        error.Description = this.Description;
+        error.Date = DateTime.UtcNow.ToShortDateString();
+        await ErrorService.AddError(error);
+        NavigationManager.NavigateTo("/errors");
+    }
+
+}

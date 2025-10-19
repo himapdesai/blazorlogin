@@ -1,0 +1,25 @@
+@page "/delete/{id:int}"
+@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private async Task DeleteErrorCallback()
+    {
+        await ErrorService.DeleteError(Id); 
+        NavigationManager.NavigateTo("/errors");
+    }
+    private async Task Cancel()
+    {
+        NavigationManager.NavigateTo("/errors");
+
+    }
+
+}
+
+<h3>Are you sure you want to delete this error?</h3>
+<bytton class="btn btn-danger" @onclick="DeleteErrorCallback">Yes, Delete</bytton>
+<button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
