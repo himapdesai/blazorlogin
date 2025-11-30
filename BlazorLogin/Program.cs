@@ -8,6 +8,7 @@ using ErrorBlazorLoginApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
@@ -52,9 +53,9 @@ using (var serviceScope = app.Services.CreateScope())
     if (!db.Errors.Any())
     {
         db.Errors.AddRange(
-            new Error { Title = "STCON", Date = "2025/10/06", Description = "Retry error with Id XXX" },
-            new Error { Title = "DC", Date = "2025/10/09", Description = "DC: 5426216.2 weight do not match" },
-            new Error { Title = "OVDC", Date = "2025/10/10", Description = "OVDC error for Kem" }
+            new Error { Title = "STCON", Date = "2025/10/06",Status="New", Description = "Retry error with Id XXX" },
+            new Error { Title = "DC", Date = "2025/10/09", Status="New", Description = "DC: 5426216.2 weight do not match" },
+            new Error { Title = "OVDC", Date = "2025/10/10", Status="New", Description = "OVDC error for Kem" }
         );
         db.SaveChanges();
     }

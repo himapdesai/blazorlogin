@@ -1,41 +1,163 @@
 @page "/edit/{Id:int}"
-@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@using System.ComponentModel.DataAnnotations
 @using ErrorBlazorLoginApp.Models
-@using Microsoft.AspNetCore.Components
+@using ErrorBlazorLoginApp.Services
+@inject ErrorService ErrorService
 @inject NavigationManager NavigationManager
 
 @attribute [Authorize]
 
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-secondary" role="status" aria-hidden="true"></div>
+                    <div class="mt-2">Loading, please wait</div>
+                </div>
+            }
+            else if (model == null)
+            {
+                <div class="alert alert-warning">Error not found</div>
+            }
+            else
+            {
+                <h3 class="mb-3">Edit error</h3>
+
+                <EditForm Model="model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <InputText id="title" class="form-control" @bind-Value="model.Title" />
+                        <ValidationMessage For="@(() => model.Title)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <InputTextArea id="description" class="form-control" rows="4" @bind-Value="model.Description" />
+                        <ValidationMessage For="@(() => model.Description)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <InputSelect id="status" class="form-select" @bind-Value="model.Status" @onchange="OnStatusChanged">
+                            <option value="">-- Select status --</option>
+                            <option value="New">New</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Close">Close</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => model.Status)" />
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(model.Status) && statusDate.HasValue)
+                    {
+                        <div class="alert alert-info small">
+                            <strong>Status:</strong> @model.Status<br />
+                            <strong>Updated:</strong> @statusDate.Value.ToString("dd-MMM-yyyy hh:mm tt")
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input id="date" class="form-control" value="@(model.Date ?? string.Empty)" disabled />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
 @code {
     [Parameter] public int Id { get; set; }
-    private Error? errorModel;
+
+    private bool isLoading = true;
+    private EditErrorModel model = new EditErrorModel();
+    private Error? originalError;
+    private DateTime? statusDate;
+
+    private class EditErrorModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Title is required")]
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Please choose status")]
+        public string? Status { get; set; }
+
+        public string? Date { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        errorModel = await ErrorService.GetErrorById(Id);
-    }
-
-    private async Task SaveChanges()
-    {
-        if (errorModel != null)
+        try
         {
-            await ErrorService.UpdateError(errorModel);
-            NavigationManager.NavigateTo("/errors");
+            originalError = await ErrorService.GetErrorById(Id);
+            if (originalError != null)
+            {
+                model = new EditErrorModel
+                {
+                    Id = originalError.ID,
+                    Title = originalError.Title,
+                    Description = originalError.Description,
+                    Status = originalError.Status,
+                    Date = originalError.Date
+                };
+
+                if (DateTime.TryParse(originalError.Date, out var parsed))
+                {
+                    statusDate = parsed;
+                }
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
-}
-@if (errorModel == null)
-{
-    <p> Error not found!</p>
-}
-else
-{
 
-    <h3>Edit Error</h3>
-    <EditForm Model="errorModel" OnValidSubmit="SaveChanges">
-        <InputText @bind-Value="errorModel.Title" class="form-control" />
-        <InputText @bind-Value="errorModel.Date" class="form-control" />
-        <InputText @bind-Value="errorModel.Description" class="form-control" />
-        <button type="submit"> Save </button>
-    </EditForm>
+    private async Task HandleValidSubmit()
+    {
+        if (model == null || originalError == null)
+            return;
+
+        originalError.Title = model.Title ?? string.Empty;
+        originalError.Description = model.Description ?? string.Empty;
+        originalError.Status = model.Status ?? string.Empty;
+
+        if (statusDate.HasValue)
+        {
+            originalError.Date = statusDate.Value.ToUniversalTime().ToString("o");
+        }
+        else
+        {
+            originalError.Date = originalError.Date ?? DateTime.UtcNow.ToString("o");
+        }
+
+        await ErrorService.UpdateError(originalError);
+        NavigationManager.NavigateTo("/errors");
+    }
+
+    private void OnStatusChanged(ChangeEventArgs e)
+    {
+        if (model == null) return;
+        model.Status = e.Value?.ToString();
+        statusDate = DateTime.Now;
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/errors");
+    }
 }

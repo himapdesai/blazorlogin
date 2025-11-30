@@ -33,7 +33,7 @@ namespace ErrorBlazorLoginApp.Services
             var errors = await this.GetErrors();
             return errors.FirstOrDefault(e => e.ID == Id);
         }
-        public async Task AddError(Error error)
+        public async Task SaveError(Error error)
         {
             _db.Errors.Add(error);
             await _db.SaveChangesAsync();
@@ -46,6 +46,7 @@ namespace ErrorBlazorLoginApp.Services
                 currentError.Date = error.Date;
                 currentError.Description = error.Description;
                 currentError.Title = error.Title;
+                currentError.Status = error.Status;
                 int result = await _db.SaveChangesAsync();
             }
         }

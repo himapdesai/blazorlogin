@@ -1,30 +1,100 @@
 @page "/add"
+@using System.ComponentModel.DataAnnotations
 @using ErrorBlazorLoginApp.Models
 @using ErrorBlazorLoginApp.Services
-@using System.ComponentModel.DataAnnotations
-@inject ErrorBlazorLoginApp.Services.ErrorService ErrorService
+@inject ErrorService ErrorService
 @inject NavigationManager NavigationManager
 
 @attribute [Authorize]
 
-<input type="text" class="form-control" placeholder="Enter title" @bind="Title" />
-<input type="text" class="form-control" placeholder="Enter description" @bind="Description" />
-<br />
-<button class="btn  btn-danger mt-2" @onclick="AddErrorCallback">Add</button>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+            <h3 class="mb-3">Add error</h3>
 
-@code
-{
+            <EditForm Model="@model" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label" for="title">Title</label>
+                    <InputText id="title" class="form-control" @bind-Value="model.Title" placeholder="Enter title" />
+                    <ValidationMessage For="@(() => model.Title)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="description">Description</label>
+                    <InputTextArea id="description" class="form-control" @bind-Value="model.Description" rows="4" placeholder="Enter description" />
+                    <ValidationMessage For="@(() => model.Description)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="status">Status</label>
+                    <InputSelect id="status" class="form-select" @bind-Value="model.Status" @onchange="OnStatusChanged">
+                        <option value="">-- choose status --</option>
+                        <option value="New">New</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Close">Close</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => model.Status)" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(model.Status) && statusDate != null)
+                {
+                    <div class="alert alert-info small">
+                        <strong>Status</strong>: @model.Status<br />
+                        <strong>Time</strong>: @statusDate.Value.ToString("dd-MMM-yyyy hh:mm tt")
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
     [Parameter] public int Id { get; set; }
-    [Parameter, Required] public string Title { get; set; }
-    [Parameter] public string Description { get; set; }
-    private async Task AddErrorCallback()
+
+    private AddErrorModel model = new AddErrorModel();
+    private DateTime? statusDate;
+
+    private class AddErrorModel
     {
-        Error error = new Error();
-        error.Title = this.Title;
-        error.Description = this.Description;
-        error.Date = DateTime.UtcNow.ToShortDateString();
-        await ErrorService.AddError(error);
+        [Required(ErrorMessage = "Title is required")]
+        public string? Title { get; set; }
+
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "Please choose status")]
+        public string? Status { get; set; }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var error = new Error
+        {
+            Title = model.Title ?? string.Empty,
+            Description = model.Description ?? string.Empty,
+            Status = model.Status ?? string.Empty,
+            Date = DateTime.UtcNow.ToString("o")
+        };
+
+        await ErrorService.SaveError(error);
         NavigationManager.NavigateTo("/errors");
     }
 
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/errors");
+    }
+
+    private void OnStatusChanged(ChangeEventArgs e)
+    {
+        model.Status = e.Value?.ToString();
+        statusDate = DateTime.Now;
+    }
 }
