@@ -1,0 +1,88 @@
+@page "/jokes"
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+
+<h3>Jokes</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary me-2" @onclick="AddMoreAsync" disabled="@isLoading">
+        @(isLoading ? "Loading..." : "Add more")
+    </button>
+    <button class="btn btn-outline-secondary" @onclick="Clear" disabled="@isLoading || jokes.Count == 0">
+        Clear
+    </button>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (jokes.Count == 0 && !isLoading)
+{
+    <p>No jokes yet. Click "Add more" to fetch one.</p>
+}
+
+@foreach (var joke in jokes)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">@joke.Setup</h5>
+            <p class="card-text">@joke.Punchline</p>
+            <span class="badge bg-light text-dark">Id: @joke.Id @if(!string.IsNullOrEmpty(joke.Type)){<text>| @joke.Type</text>}</span>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading;
+    private string? errorMessage;
+    private readonly List<Joke> jokes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the first joke on page load
+        await AddMoreAsync();
+    }
+
+    private async Task AddMoreAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        var client = HttpClientFactory.CreateClient();
+        try
+        {
+            var joke = await client.GetFromJsonAsync<Joke>("https://official-joke-api.appspot.com/random_joke");
+            if (joke != null)
+            {
+                jokes.Add(joke);
+            }
+            else
+            {
+                errorMessage = "Couldn't get a joke. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error fetching joke: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void Clear()
+    {
+        jokes.Clear();
+        errorMessage = null;
+    }
+
+    private class Joke
+    {
+        public int Id { get; set; }
+        public string? Type { get; set; }
+        public string? Setup { get; set; }
+        public string? Punchline { get; set; }
+    }
+}

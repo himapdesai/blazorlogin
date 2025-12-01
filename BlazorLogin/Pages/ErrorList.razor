@@ -9,11 +9,20 @@
 
 <div class="container py-3">
     <div class="row mb-3">
-        <div class="col-6">
+        <div class="col-12 col-md-6">
             <h3>Error list</h3>
         </div>
-        <div class="col-6 text-end">
-            <button class="btn btn-primary" @onclick="Add">Add</button>
+        <div class="col-12 col-md-6">
+            <div class="d-flex gap-2 justify-content-md-end align-items-center">
+                <label class="form-label mb-0">Status:</label>
+                <InputSelect class="form-select" style="max-width:220px" @bind-Value="selectedStatus">
+                    <option value="">All</option>
+                    @foreach (var s in statuses)
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </InputSelect>
+            </div>
         </div>
     </div>
 
@@ -30,6 +39,10 @@
     }
     else
     {
+        @if (!FilteredErrors.Any())
+        {
+            <div class="alert alert-warning">No matching errors for the selected status.</div>
+        }
         <div class="table-responsive">
             <table class="table table-striped align-middle">
                 <thead>
@@ -42,7 +55,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var err in Errors)
+                    @foreach (var err in FilteredErrors)
                     {
                         <tr>
                             <td>@err.Title</td>
@@ -60,7 +73,7 @@
         </div>
 
         <div class="d-block d-sm-none">
-            @foreach (var err in Errors)
+            @foreach (var err in FilteredErrors)
             {
                 <div class="card mb-2">
                     <div class="card-body">
@@ -79,11 +92,19 @@
             }
         </div>
     }
+    <div class="mt-3">
+        <button class="btn btn-primary" @onclick="Add">Add</button>
+    </div>
 </div>
 
 @code {
     private List<Error> Errors { get; set; } = new();
     private bool isLoading = false;
+    private List<string> statuses = new();
+    private string? selectedStatus = string.Empty;
+    private IEnumerable<Error> FilteredErrors => string.IsNullOrEmpty(selectedStatus)
+        ? Errors
+        : Errors.Where(e => e.Status == selectedStatus);
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,6 +113,12 @@
         {
             var list = await ErrorService.GetErrors();
             Errors = list?.ToList() ?? new List<Error>();
+            statuses = Errors
+                .Select(e => e.Status)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .OrderBy(s => s)
+                .ToList();
         }
         finally
         {

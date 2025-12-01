@@ -14,6 +14,7 @@ builder.Services.AddServerSideBlazor();
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ErrorService>();
+builder.Services.AddHttpClient();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
